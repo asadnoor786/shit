@@ -2,11 +2,23 @@ const express = require("express");
 const path = require("path");
 const bodyParser = require("body-parser");
 const app = express();
-const port = process.env.port || 80;
+<<<<<<< HEAD
+const Razor = require("razorpay");
+=======
+>>>>>>> 3036fda8a34b5665c3fdbd1abfccdbcaecd5c1ff
+const port = process.env.PORT || 80;
+app.get('*', (request, response) => {
+	response.sendFile(path.join(__dirname, 'client/build', 'index.html'));
+});
+if (process.env.NODE_ENV === 'production') {
+	app.use(express.static('client/build'));
+}
 const mongoose = require("mongoose");
-const { read } = require("fs");
 app.use(express.urlencoded({extended:true}));
-mongoose.connect('mongodb://localhost:27017/ecommerce', {useNewUrlParser : true});
+app.listen(port, () => {
+    console.warn(`Server Has Started`);
+});
+mongoose.connect('mongodb+srv://Asad:shaguftanaz@cluster0.6jrm8.mongodb.net/myFirstDatabase?retryWrites=true&w=majority', {useNewUrlParser : true});
 var db = mongoose.connection;
 db.on('error', console.error.bind(console, "error"));
 db.once('open', ()=>{
@@ -17,6 +29,9 @@ const contactStruc = new mongoose.Schema({
     phone : String,
     message : String
 });
+const trackStruc = new mongoose.Schema({
+    phone : String
+})
 const signUpStruc = new mongoose.Schema({
     name : String,
     phone: String,
@@ -31,6 +46,13 @@ const cartStruc = new mongoose.Schema({
     productName : String,
     imgUrl1 : String,
     price : String,
+});
+var orderStruc = new mongoose.Schema({
+    phone : String,
+    orderKaId : String,
+    adress : String,
+    trackingId : String,
+    items : Array
 });
 const apiStruc = new mongoose.Schema({
     productId : String,
@@ -53,10 +75,9 @@ const contact = mongoose.model("contactUs", contactStruc);
 const api = mongoose.model("productsAPI", apiStruc);
 const signup = mongoose.model("userAccounts", signUpStruc);
 const cart = mongoose.model("userCart", cartStruc);
+const order = mongoose.model("Orders", orderStruc);
+const track = mongoose.model("Tracking", trackStruc);
 // const signup = mongoose.model("userAccounts", signUpStruc);
-app.listen(port, () => {
-    console.warn(`Server Has Started`);
-});
 app.use(express.urlencoded({extended:true}));
 app.use(express.static("WWW"));
 app.get("/", (req, res) => {
@@ -177,7 +198,6 @@ app.post("/login", (req, res) => {
             numberArr = phone.split("");
             reverseArr = numberArr.reverse();
             reverse = reverseArr.join("");
-            console.log(reverse);
             res.end(`
             <!DOCTYPE html>
 <html lang="en">
@@ -281,14 +301,12 @@ app.get("/temp", (req, res) => {
     res.sendFile(__dirname+"/WWW/HTML/temp.html");
 });
 app.post("/temp", (req, res) => {
-    console.log(req.body);
     var data = new api(req.body);
     data.save();
 });
 
 app.get("/api", (req, res) => {
     api.find({}, (err, user) => {
-        console.log("yes");
         res.send(user);
     });
 });
@@ -311,6 +329,7 @@ app.get("/search:id", (req, res) => {
             for(;j < eachUserKeywordsArr.length; j++) {
                 var eachUserKeywords = eachUserKeywordsArr[j];
                 if(eachUserKeywords.includes(item)) {
+                    console.log(eachUser);
                     finalArr.push(eachUser);
                     break;
                 }
@@ -402,7 +421,7 @@ app.get("/product:id", (req, res) => {
                     <span class="fa fa-shopping-cart"></span>
                     Add to cart
                 </button>
-                <button class="buy">
+                <button class="buy" onclick="addCart()">
                     <span class="fa fa-shopping-cart"></span>
                     Buy now
                 </button>
@@ -518,7 +537,6 @@ app.post("/userProfile", (req, res) => {
     var data = req.body;
     req.body.rePassword  = req.body.password;
     signup.updateOne({phone : req.body.phone}, {name : req.body.name, phone : req.body.phone, password : req.body.password, rePassword : req.body.rePassword}, (err, result) => {
-        console.log(err, result);
         res.sendFile(__dirname+"/WWW/HTML/profile.html"); 
     });
 });
@@ -531,7 +549,6 @@ app.get("/cart:id", (req, res) => {
     var number = item.slice(aaa+1);
             cart.findOne({phone: number, productId : id}, (err, response) => {
                 if(response === null) {
-                    console.log("yes br");
                     api.findOne({productId : id}, (err, product) => {
                         var productId = id;
                         var name = product['productName'];
@@ -548,7 +565,6 @@ app.get("/cart:id", (req, res) => {
                         };
                         var data = new cart(myArr);
                         data.save().then(res.send("true"));
-                        console.log(myArr);
                     });
                 }
                 else {
@@ -571,11 +587,193 @@ app.get("/remove:id", (req, res) => {
     var id = item.slice(10);
     var number = item.slice(0, 10);
     cart.deleteOne({phone : number, productId : id}, (err, result) => {
-        console.log(result);
         res.send("Deleted!");
     });
 });
 
 app.get("/category.html", (req, res) => {
     res.sendFile(__dirname+"/WWW/HTMl/category.html");
-})
+});
+
+const razorpay = new Razor({
+    key_id : 'rzp_test_je0cjIQMvAQ8vm',
+    key_secret : 'bFn6MVMcgSHnZy8KMjITLDi2'
+});
+
+app.get("/createOrder:id", (req, res) => {
+    var item = req.path;
+    item = item.replace("/createOrder:", "");
+    var phone = item.slice(0, 10);
+    var id = new Array();
+    var rest = item.slice(10);
+    rest = rest.slice(1, rest.length - 1);
+    id = rest.split("&");
+    var price = id[id.length - 1];
+    price = parseInt(price);
+    id.pop();
+    var id2 = id.length *100;
+    price = (id2 + price);
+    price = price * 100;
+    var options = {
+        amount : price,
+        currency : "INR",
+        receipt : "order_rcptid_11"
+    }
+    razorpay.orders.create(options, (err, orderId) => {
+        res.send(orderId);
+    });
+});
+
+app.post("/checkSucess:id", (req, res) => {
+    var item = req.path;
+    var userAdress;
+    item = item.replace("/checkSucess:", "");
+    var number = item.slice(0, 10);
+    var rest = item.slice(11);
+    rest = rest.split("&");
+    var orderId = rest[rest.length-1];
+    rest.pop();
+    var len = rest.length;
+    var price = rest[len-1];
+    rest.pop();
+   
+    signup.findOne({phone : number}, (err, user) => {
+        userAdress = user['adress'];
+        var myArr = {
+            phone : number,
+            orderKaId : orderId,
+            adress : userAdress,
+            tractingId : "Ordered",
+            items : rest
+        };
+        var data = new order(myArr);
+        data.save().then(res.end(`
+        <script>alert("Your Order Have Been Placed, Soon You Will Recieve A Call For Confirmation");window.location.href="/myCart";</script>
+        `));
+    })
+   
+});
+
+app.get("/orderOfline:id", (req, res) => {
+    item = req.path;
+    var item = item.replace("/orderOfline:", "");
+    var number = item.slice(0, 10);
+    item = item.slice(11);
+    item = item.split("&");
+    var arrLen = item.length;
+    var price = item[arrLen - 1];
+    item.pop();
+    var id = "order_id_"+item.join("");
+    signup.findOne({phone : number}, (err, user) => {
+        userAdress = user['adress'];
+        var myArr = {
+            phone : number,
+            orderKaId : id,
+            adress : userAdress,
+            tractingId : "Ordered",
+            items : item
+        };
+        var data = new order(myArr);
+        data.save().then(res.end("<script>alert('Your Order Has Been Placed Successfully, Soon You Will Recieve A Confirmation Call');window.location.href='/myCart';</script>"));
+    });
+});
+
+app.get("/myOrders", (req, res) => {
+    res.sendFile(__dirname+"/WWW/HTML/orders.html");
+});
+
+app.get("/myOrder", (req, res) => {
+    res.sendFile(__dirname+"/WWW/HTML/main-order.html");
+});
+
+app.get("/getOrder:id", (req, res) => {
+    var myFinalArr = new Array();
+    var number = req.path;
+    number = number.replace("/getOrder:", "");
+    number = number.slice(0, 10);
+    order.find({phone : number}, (err, info) => {
+        var len = info.length;
+        for(var i=0; i<len; i++) {
+            var thisArr = info[i];
+            var items = thisArr['items'];
+            var len1 = items.length;
+            for(var j=0;j<len1; j++) {
+                var id = items[j];
+                api.find({productId : id}, (err, product) => {
+                    myFinalArr.push(product[0]);
+                });
+            }
+        }
+        setTimeout(() => {
+            res.send(myFinalArr);
+            console.log(myFinalArr.length);
+        }, 300);
+    });
+});
+
+
+app.get("/myOrders:id", (req, res) => {
+    var item = req.path;
+    item = item.replace("/myOrders:", "");
+    console.log(item);
+    api.find({productId : item}, (err, product) => {
+        product = product[0];
+        var name = product['productName'];
+        var price = product['price'];
+        res.end(`
+        
+        <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="../CSS/orders.css">
+    <script src="../JS/orders.js"></script>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+</head>
+<body>
+    <div class="container-fluid my-3 d-sm-flex justify-content-center">
+        <div class="card px-2" style="position:absolute;top:50%;left:50%;transform:translate(-50%, -50%);min-width: 350px;">
+            <div class="card-header bg-white">
+                <div class="row justify-content-between">
+                    <div class="flex-col my-auto">
+                    </div>
+                </div>
+            </div>
+            <div class="card-body"><br>
+                <div class="media flex-column flex-sm-row">
+                    <div class="media-body ">
+                        <h5 class="bold product">${name}</h5>
+                        <p class="text-muted"> Qt: 1 Pair</p>
+                        <h4 class="mt-3 mb-4 bold"> <span class="mt-5">&#x20B9;</span> ${price}</h4>
+                    </div><img class="align-self-center img-fluid" src="${product['imgUrl1']}"style="width:180px;height:180px;background-size: 100% 100%;">
+                </div>
+            </div>
+            <div class="card-footer bg-white px-sm-3 pt-sm-4 px-0" onclick="redirectWhatsapp()">
+                <div class="row text-center ">
+                <div class="col my-auto border-line ">
+                    <h5>Track Order</h5>
+                </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>`);
+    });
+});
+
+app.get("/postMessage:id", (req, res) => {
+    var item = req.path;
+    item = item.replace("/postMessage:", "");
+    var arr = {
+        phone : item
+    };
+    var data = new track(arr);
+    data.save().then(res.send('done'));
+});

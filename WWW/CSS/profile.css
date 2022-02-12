@@ -119,3 +119,30 @@ button:hover{
     color: #333;
     transition-duration: .3s;
 }
+
+@media screen and (max-width: 500px) {
+    form{
+    width: 320px !important;
+    }
+    input{
+        width:250px !important;
+    }
+    .header{
+        font-size: 27px !important;
+    }
+    .rest{
+        width:250px;
+        right: 20px;
+    }
+}
+@media screen and (max-width: 450px) {
+    .rest{
+        width:300px;
+        position: absolute;
+        left:50%;
+        transform: translate(-50%);
+    }
+    .back{
+        display: none;
+    }
+}
