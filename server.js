@@ -2,7 +2,7 @@ const express = require("express");
 const path = require("path");
 const bodyParser = require("body-parser");
 const app = express();
-const port = process.env.port || 80;
+const port = process.env.PORT || 80;
 const mongoose = require("mongoose");
 const { read } = require("fs");
 app.use(express.urlencoded({extended:true}));
