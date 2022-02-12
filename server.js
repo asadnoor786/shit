@@ -7,6 +7,12 @@ const Razor = require("razorpay");
 =======
 >>>>>>> 3036fda8a34b5665c3fdbd1abfccdbcaecd5c1ff
 const port = process.env.PORT || 80;
+app.get('*', (request, response) => {
+	response.sendFile(path.join(__dirname, 'client/build', 'index.html'));
+});
+if (process.env.NODE_ENV === 'production') {
+	app.use(express.static('client/build'));
+}
 const mongoose = require("mongoose");
 app.use(express.urlencoded({extended:true}));
 app.listen(port, () => {
