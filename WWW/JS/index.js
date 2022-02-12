@@ -5,7 +5,6 @@ function loadBody() {
     document.getElementById("section-6").setAttribute("style", "height:"+(screen.height+100)+"px;margin-top:50px;");
     console.log("ye");
     }
-    var about = document.querySelector(".ifr1").contentWindow.document.getElementById("about");
     var home = document.querySelector(".ifr1").contentWindow.document.getElementById("home");
     var contact = document.querySelector(".ifr1").contentWindow.document.getElementById("contact");
     var products = document.querySelector(".ifr1").contentWindow.document.getElementById("products");
@@ -15,9 +14,9 @@ function loadBody() {
         console.log("yes");
         window.location.href="#section-1";
     });
-    about.addEventListener('click', () => {
-        window.location.href="#section-4";
-    });
+    // about.addEventListener('click', () => {
+    //     window.location.href="#section-4";
+    // });
     contact.addEventListener('click', () => {
         window.location.href="#section-5";
     });

@@ -25,6 +25,6 @@ function addCart() {
     console.log("Url = "+Url)
     fetch("http://127.0.0.1/cart:"+Url)
     .then(response => response.json())
-    .then(data => console.log(data));
+    .then(data => window.location.href="/myCart");
     }
 }
